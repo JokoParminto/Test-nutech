@@ -3,12 +3,16 @@ import { getProfile, createUser, loginUser, updateProfile, updateImage, getFile 
 import { authenticateJWT } from '../middleware/jwtMiddleware'
 import { validateUserRegistration, validationLogin } from '../middleware/validation'
 import upload from '../middleware/upload'
+import { getList as getListBanner } from '../controllers/bannerController'
+import { getList as getListService } from '../controllers/serviceController'
 const router = Router()
 
 /**
  * @openapi
  * /api/v1/register:
  *   post:
+ *     tags:
+ *       - 1. Module Membership
  *     security: []
  *     description: |
  *       **Public Registration API**  
@@ -81,6 +85,8 @@ router.post('/register', validateUserRegistration, createUser)
  * @openapi
  * /api/v1/login:
  *   post:
+ *     tags:
+ *       - 1. Module Membership
  *     security: []
  *     description: |
  *       **API Login Public (Tidak perlu Token untuk mengaksesnya)**  
@@ -164,6 +170,8 @@ router.post('/login', validationLogin, loginUser)
  * @openapi
  * /api/v1/profile:
  *   get:
+ *     tags:
+ *       - 1. Module Membership
  *     security:
  *       - BearerAuth: []
  *     description: |
@@ -229,6 +237,8 @@ router.get('/profile', authenticateJWT, getProfile)
  * @openapi
  * /api/v1/profile/update:
  *   patch:
+ *     tags:
+ *       - 1. Module Membership
  *     security:
  *       - BearerAuth: []
  *     description: |
@@ -308,6 +318,8 @@ router.patch('/profile/update', authenticateJWT, updateProfile)
  * @openapi
  * /api/v1/profile/image:
  *   patch:
+ *     tags:
+ *       - 1. Module Membership
  *     security:
  *       - BearerAuth: []
  *     description: |
@@ -402,4 +414,141 @@ router.patch('/profile/image', authenticateJWT, upload.single('file') ,updateIma
 
 router.get('/uploads/:filename', getFile)
 
-export { router as userRoutes }
+
+/**
+ * @openapi
+ * /api/v1/banner:
+ *   get:
+ *     tags:
+ *       - 2. Module Information
+ *     security:
+ *       - BearerAuth: []
+ *     description: |
+ *       **API Banner Public (tidak memerlukan Token untuk mengaksesnya)**  
+ * 
+ *       Digunakan untuk mendapatkan list banner
+ *       
+ *       **Ketentuan:**
+ *       - Buat data list banner sesuai dokumentasi Response dibawah, usahakan banner ini tidak di hardcode, melainkan ambil dari database
+ *       - Tidak perlu membuatkan module CRUD banner
+ *       - Handling Response sesuai dokumentasi Response dibawah
+ *       
+ *     responses:
+ *       200:
+ *         description: Request Successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 0
+ *                 message:
+ *                   type: string
+ *                   example: "Sukses"
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       banner_name:
+ *                         type: string
+ *                         example: "Banner 1"
+ *                       banner_image:
+ *                         type: string
+ *                         example: "https://nutech-integrasi.app/dummy.jpg"
+ *                       description:
+ *                         type: string
+ *                         example: "Lerem Ipsum Dolor sit amet"
+ * 
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 108
+ *                 message:
+ *                   type: string
+ *                   example: "Token tidak valid atau kadaluwarsa"
+ *                 data:
+ *                   type: string
+ *                   example: null
+ */
+router.get('/banner', authenticateJWT, getListBanner)
+
+
+/**
+ * @openapi
+ * /api/v1/services:
+ *   get:
+ *     tags:
+ *       - 2. Module Information
+ *     security:
+ *       - BearerAuth: []
+ *     description: |
+ *       **API Services Private (memerlukan Token untuk mengaksesnya)**  
+ * 
+ *       Digunakan untuk mendapatkan list Service/Layanan PPOB
+ *       
+ *       **Ketentuan:**
+ *       - Buat data list Service/Layanan sesuai dokumentasi Response dibawah, usahakan data list `Service` atau `Layanan` ini tidak di hardcode, melainkan ambil dari database
+ *       - Tidak perlu membuatkan module CRUD Service/Layanan
+ *       - Handling Response sesuai dokumentasi Response dibawah
+ *       
+ *     responses:
+ *       200:
+ *         description: Request Successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 0
+ *                 message:
+ *                   type: string
+ *                   example: "Sukses"
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       service_code:
+ *                         type: string
+ *                         example: "PAJAK"
+ *                       service_name:
+ *                         type: string
+ *                         example: "Pajak PBB"
+ *                       service_icon:
+ *                         type: string
+ *                         example: "https://nutech-integrasi.app/dummy.jpg"
+ *                       service_tariff:
+ *                         type: number
+ *                         example: 10000
+ * 
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 108
+ *                 message:
+ *                   type: string
+ *                   example: "Token tidak valid atau kadaluwarsa"
+ *                 data:
+ *                   type: string
+ *                   example: null
+ */
+router.get('/services', authenticateJWT, getListService)
+
+export { router as routes }

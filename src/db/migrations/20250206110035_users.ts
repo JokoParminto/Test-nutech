@@ -10,11 +10,11 @@ export async function up(knex: Knex): Promise<void> {
     table.string('password').notNullable()
     table.text('profile_image').defaultTo('https://myprofile.com/image.jpg')
     table.timestamps(true, true)
-  });
+  })
 }
 
 
 export async function down(knex: Knex): Promise<void> {
-  return knex.schema.dropTableIfExists('users');
+  return knex.schema.dropTableIfExists('users')
 }
 

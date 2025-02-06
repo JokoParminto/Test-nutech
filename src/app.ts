@@ -1,7 +1,7 @@
 import express from 'express'
 import swaggerJsdoc from 'swagger-jsdoc'
 import swaggerUi from 'swagger-ui-express'
-import { userRoutes } from './routes/userRoutes'
+import { routes } from './routes/routes'
 import dotenv from 'dotenv'
 dotenv.config()
 import path from 'path'
@@ -17,6 +17,15 @@ const swaggerDefinition = {
     version: '1.0.0',
     description: 'API Documentation with Bearer Token Authentication',
   },
+  tags: [
+    {
+      name: "1. Module Membership"
+    },
+    {
+      name: "2. Module Information"
+    }
+    
+  ],
   servers: [
     {
       url: 'http://localhost:3200',
@@ -48,7 +57,7 @@ app.use('/uploads', express.static(path.join(__dirname, './uploads')))
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs))
 
-app.use('/api/v1', userRoutes); // Example route for user
+app.use('/api/v1', routes); // Example route for user
 
 app.listen(port, () => {
   console.log('Server running on http://localhost:' + port);
