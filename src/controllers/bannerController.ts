@@ -1,12 +1,10 @@
 import { Request, Response } from 'express'
-import knex from '../db'
 import { BuildFormat } from "../common/response"
+import { getAll } from '../repository/bannerRepository'
 
 export const getList = async (req: Request, res: Response) => {
   try {
-    const result = await knex.raw(
-      'SELECT banner_name, banner_image, description FROM banners'
-    )
+    const result = await getAll(res)
     if (result.rowCount === 0) {
       return BuildFormat.notFound(res, 'Data tidak ditemukan')
     }

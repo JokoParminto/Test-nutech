@@ -1,20 +1,18 @@
 import { Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import knex from '../db'
 import { BuildFormat } from '../common/response'
 import dotenv from 'dotenv'
 dotenv.config()
 import path from 'path';
+import { create, getByEmail, getById, updateData, updateImageProfile } from '../repository/userRepository'
+import { createDefault } from '../repository/balanceRepository'
 
 
 export const getProfile = async (req: Request, res: Response) => {
   const userId: number = (req as any).user.id
   try {
-    const result = await knex.raw(
-      'SELECT email, first_name, last_name, profile_image FROM users WHERE id = ? LIMIT 1', [userId]
-    )
-    console.log(result)
+    const result = await getById(res, userId)
     if (result.rowCount === 0) {
       return BuildFormat.notFound(res, 'Username atau password salah')
     }
@@ -26,16 +24,18 @@ export const getProfile = async (req: Request, res: Response) => {
 }
 
 export const createUser = async (req: Request, res: Response) => {
-  const { email, first_name, last_name, password } = req.body
-  const hashedPassword = await bcrypt.hash(password, 10)
-
+  const hashedPassword = await bcrypt.hash(req.body.password, 10)
+  let data = {
+    email: req.body.email,
+    first_name: req.body.first_name,
+    last_name: req.body.last_name,
+    password: hashedPassword
+  }
   try {
-    const create = await knex.raw(
-      `INSERT INTO users (email, first_name, last_name, password) VALUES (?, ?, ?, ?) RETURNING *`,
-      [email, first_name, last_name, hashedPassword]
-    )
-    console.log(create)
-    if (create.rowCount !== 0) {
+    const result = await create(res, data)
+    console.log(result.rows[0].id)
+    if (result.rowCount !== 0) {
+      await createDefault(res, result.rows[0].id)
       return BuildFormat.succesCreate(res, 'Registrasi berhasil silakan login')
     }
   } catch (err) {
@@ -47,9 +47,7 @@ export const loginUser = async (req: Request, res: Response) => {
   const { email, password } = req.body
 
   try {
-    const result = await knex.raw(
-      'SELECT * FROM users WHERE email = ? LIMIT 1', [email]
-    )
+    const result = await getByEmail(res, email)
     if (result.rowCount === 0) {
       return BuildFormat.notFound(res, 'Username atau password salah')
     }
@@ -77,19 +75,17 @@ export const loginUser = async (req: Request, res: Response) => {
 }
 
 export const updateProfile = async (req: Request, res: Response) => {
-  const { first_name, last_name } = req.body
   const userId: number = (req as any).user.id
-
+  let data: object = {
+    first_name: req.body.first_name,
+    last_name: req.body.last_name,
+    userId
+  }
   try {
-    const result = await knex.raw(
-      'UPDATE users SET first_name = ?, last_name = ? WHERE id = ?',
-      [first_name, last_name, userId]
-    )
-    console.log(result)
+    const result = await updateData(res, data)
+
     if (result.rowCount !== 0) {
-      const getProfile = await knex.raw(
-        'SELECT email, first_name, last_name, profile_image FROM users WHERE id = ? LIMIT 1', [userId]
-      )
+      const getProfile = await getById(res, userId)
       return BuildFormat.success(res, 'Update Pofile berhasil', getProfile.rows[0])
     }
   } catch (err) {
@@ -105,15 +101,9 @@ export const updateImage = async (req: Request, res: Response) => {
   const profile_image = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
   
   try {
-    const result = await knex.raw(
-      'UPDATE users SET profile_image = ? WHERE id = ?',
-      [profile_image, userId]
-    )
-    console.log(result)
+    const result = await updateImageProfile(res, { profile_image, userId })
     if (result.rowCount !== 0) {
-      const getProfile = await knex.raw(
-        'SELECT email, first_name, last_name, profile_image FROM users WHERE id = ? LIMIT 1', [userId]
-      )
+      const getProfile = await getById(res, userId)
       return BuildFormat.success(res, 'Update Profile Image berhasil', getProfile.rows[0])
     }
   } catch (err) {

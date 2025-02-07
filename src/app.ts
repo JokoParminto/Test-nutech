@@ -25,13 +25,14 @@ const swaggerDefinition = {
     },
     {
       name: "2. Module Information"
+    },
+    {
+      name: "3. Module Transaction"
     }
-    
   ],
   servers: [
     {
-      url: process.env.URL,
-      // url: 'http://localhost:3200',
+      url: process.env.URL
     },
   ],
   components: {
@@ -58,7 +59,7 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsdoc(swaggerOptions)
 app.use(
   cors({
-    origin: ["*"],
+    origin: "*",
     methods: ["GET", "POST", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true

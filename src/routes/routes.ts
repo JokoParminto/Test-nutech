@@ -1,10 +1,12 @@
 import { Router } from 'express'
 import { getProfile, createUser, loginUser, updateProfile, updateImage, getFile } from '../controllers/userController'
 import { authenticateJWT } from '../middleware/jwtMiddleware'
-import { validateUserRegistration, validationLogin } from '../middleware/validation'
+import { validateUserRegistration, validationLogin, validationTopup, validationTransaction } from '../middleware/validation'
 import upload from '../middleware/upload'
 import { getList as getListBanner } from '../controllers/bannerController'
 import { getList as getListService } from '../controllers/serviceController'
+import { getList, topup } from '../controllers/balanceController'
+import { createTrx, getListTrx } from '../controllers/transactionController'
 const router = Router()
 
 /**
@@ -414,7 +416,6 @@ router.patch('/profile/image', authenticateJWT, upload.single('file') ,updateIma
 
 router.get('/uploads/:filename', getFile)
 
-
 /**
  * @openapi
  * /api/v1/banner:
@@ -480,7 +481,6 @@ router.get('/uploads/:filename', getFile)
  *                   example: null
  */
 router.get('/banner', authenticateJWT, getListBanner)
-
 
 /**
  * @openapi
@@ -550,5 +550,358 @@ router.get('/banner', authenticateJWT, getListBanner)
  *                   example: null
  */
 router.get('/services', authenticateJWT, getListService)
+
+/**
+ * @openapi
+ * /api/v1/balance:
+ *   get:
+ *     tags:
+ *       - 3. Module Transaction
+ *     security:
+ *       - BearerAuth: []
+ *     description: |
+ *       **API Balance Private (memerlukan Token untuk mengaksesnya)**  
+ * 
+ *       Digunakan untuk mendapatkan informasi balance / saldo terakhir dari User
+ *       
+ *       **Ketentuan:**
+ *       - Service ini harus menggunakan `Bearer Token JWT` untuk mengaksesnya
+ *       - Service ini harus menggunakan Bearer Token JWT untuk mengaksesnya
+ *       - Handling Response sesuai dokumentasi Response dibawah
+ *       
+ *     responses:
+ *       200:
+ *         description: Get Balance / Saldo Berhasil
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 0
+ *                 message:
+ *                   type: string
+ *                   example: "Get Balance Berhasil"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     balance:
+ *                       type: number
+ *                       example: 1000000
+ * 
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 108
+ *                 message:
+ *                   type: string
+ *                   example: "Token tidak valid atau kadaluwarsa"
+ *                 data:
+ *                   type: string
+ *                   example: null
+ */
+router.get('/balance', authenticateJWT, getList)
+
+/**
+ * @openapi
+ * /api/v1/topup:
+ *   post:
+ *     tags:
+ *       - 3. Module Transaction
+ *     security:
+ *       - BearerAuth: []
+ *     description: |
+ *       **API Topup Private (memerlukan Token untuk mengaksesnya)**  
+ * 
+ *       Digunakan untuk melakukan top up balance / saldo dari User
+ * 
+ *       Tidak perlu token untuk mengakses API ini.  
+ *       
+ *       **Ketentuan:**
+ *       - Service ini harus menggunakan `Bearer Token JWT `untuk mengaksesnya
+ *       - Tidak ada parameter email di query param url ataupun request body, parameter email diambil dari payload JWT yang didapatkan dari hasil login
+ *       - Setiap kali melakukan Top Up maka balance / saldo dari User otomatis bertambah
+ *       - Parameter `amount` hanya boleh angka saja dan tidak boleh lebih kecil dari 0
+ *       - Pada saat Top Up set transaction_type di database menjadi `TOPUP`
+ *       - Handling Response sesuai dokumentasi Response dibawah
+ *      
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               top_up_amount:
+ *                 type: number
+ *                 example: 50000
+ * 
+ *     responses:
+ *       200:
+ *         description: Request Successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 0
+ *                 message:
+ *                   type: string
+ *                   example: "Top Up Balance berhasil"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     balance:
+ *                       type: number
+ *                       example: 1000000 
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 102
+ *                 message:
+ *                   type: string
+ *                   example: "Paramter amount hanya boleh angka dan tidak boleh lebih kecil dari 0"
+ *                 data:
+ *                   type: string
+ *                   example: null
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 108
+ *                 message:
+ *                   type: string
+ *                   example: "Token tidak valid atau kadaluwarsa"
+ *                 data:
+ *                   type: string
+ *                   example: null
+ */
+router.post('/topup', validationTopup, authenticateJWT, topup)
+
+/**
+ * @openapi
+ * /api/v1/transaction:
+ *   post:
+ *     tags:
+ *       - 3. Module Transaction
+ *     security:
+ *       - BearerAuth: []
+ *     description: |
+ *       **API Transaction Private (memerlukan Token untuk mengaksesnya)**  
+ * 
+ *       Digunakan untuk melakukan transaksi dari services / layanan yang tersedia
+ * 
+ *       Tidak perlu token untuk mengakses API ini.  
+ *       
+ *       **Ketentuan:**
+ *       - Service ini harus menggunakan `Bearer Token JWT` untuk mengaksesnya
+ *       - Tidak ada parameter email di query param url ataupun request body, parameter email diambil dari payload JWT yang didapatkan dari hasil login
+ *       - Setiap kali melakukan Transaksi harus dipastikan balance / saldo mencukupi
+ *       - Pada saat Transaction set transaction_type di database menjadi `PAYMENT`
+ *       - Handling Response sesuai dokumentasi Response dibawah
+ *       - Response `invoice_number` untuk formatnya generate bebas
+ *      
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               service_code:
+ *                 type: string
+ *                 example: "PLN"
+ * 
+ *     responses:
+ *       200:
+ *         description: Request Successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 0
+ *                 message:
+ *                   type: string
+ *                   example: "Transaksi berhasil"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     invoice_number:
+ *                       type: string
+ *                       example: "INV17082023-001"
+ *                     service_code:
+ *                       type: string
+ *                       example: "PLN" 
+ *                     service_name:
+ *                       type: string
+ *                       example: "PLN Prabayar"
+ *                     transaction_type:
+ *                       type: string
+ *                       example: "PAYMENT"
+ *                     total_amount:
+ *                       type: number
+ *                       example: 10000
+ *                     created_on:
+ *                       type: string
+ *                       example: "2023-08-17T10:10:10.000Z"
+ * 
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 102
+ *                 message:
+ *                   type: string
+ *                   example: "Service ataus Layanan tidak ditemukan"
+ *                 data:
+ *                   type: string
+ *                   example: null
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 108
+ *                 message:
+ *                   type: string
+ *                   example: "Token tidak valid atau kadaluwarsa"
+ *                 data:
+ *                   type: string
+ *                   example: null
+ */
+router.post('/transaction', validationTransaction, authenticateJWT, createTrx)
+
+/**
+ * @openapi
+ * /api/v1/transaction/history:
+ *   get:
+ *     tags:
+ *       - 3. Module Transaction
+ *     security:
+ *       - BearerAuth: []
+ *     description: |
+ *       **API History Private (memerlukan Token untuk mengaksesnya)**  
+ * 
+ *       Digunakan untuk mendapatkan informasi history transaksi
+ *       
+ *       **Ketentuan:**
+ *       - Service ini harus menggunakan `Bearer Token JWT` untuk mengaksesnya
+ *       - Tidak ada parameter email di query param url ataupun request body, parameter email diambil dari payload JWT yang didapatkan dari hasil login
+ *       - Terdapat parameter limit yang bersifat opsional, jika limit tidak dikirim maka tampilkan semua data
+ *       - Data di order dari yang paling baru berdasarkan transaction date (created_on)
+ *       - Handling Response sesuai dokumentasi Response dibawah
+ * 
+ *     parameters:
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         required: false
+ *         description: Define default value 1.
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           example: 10
+ *         required: false
+ *         description: Define default value 10. 
+ *      
+ *     responses:
+ *       200:
+ *         description: Get History Transaksi berhasil
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 0
+ *                 message:
+ *                   type: string
+ *                   example: "Get History Berhasil"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     offset:
+ *                       type: integer
+ *                       example: 0
+ *                     limit:
+ *                       type: integer
+ *                       example: 3
+ *                     records:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           invoice_number:
+ *                             type: string
+ *                             example: "INV17082023-001"
+ *                           transaction_type:
+ *                             type: string
+ *                             example: "PAYMENT"
+ *                           description: 
+ *                             type: string
+ *                             example: "Pembayaran PLN Prabayar"
+ *                           total_amount: 
+ *                             type: number
+ *                             example: 10000
+ *                           created_at: 
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2023-08-17T10:10:10.000Z"
+ * 
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 108
+ *                 message:
+ *                   type: string
+ *                   example: "Token tidak valid atau kadaluwarsa"
+ *                 data:
+ *                   type: string
+ *                   example: null
+ */
+router.get('/transaction/history', authenticateJWT, getListTrx)
+
 
 export { router as routes }
