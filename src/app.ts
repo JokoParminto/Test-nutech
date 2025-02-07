@@ -57,7 +57,7 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsdoc(swaggerOptions)
 app.use(
   cors({
-    origin: ["http://localhost:3200", "https://dtrt-magelang.com"],
+    origin: ["*"],
     methods: ["GET", "POST", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true
