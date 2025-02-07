@@ -2,9 +2,12 @@ import multer from 'multer'
 import path from 'path'
 import { BuildFormat } from '../common/response'
 
+import dotenv from 'dotenv';
+dotenv.config({ path: path.resolve(__dirname, '../../.env') })
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, '/Users/nadwei/Docker Project/test-nutech/dist/uploads')
+    cb(null, `${process.env.UPLOAD_PATH}`)
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`)

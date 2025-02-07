@@ -1,6 +1,8 @@
 import { Request, Response } from 'express'
 import { BuildFormat } from "../common/response"
 import { getById, topUpAmmount } from '../repository/balanceRepository'
+import { createTrxes } from '../repository/transactionRepository'
+import { generateInvNumber } from '../common/helper'
 
 export const getList = async (req: Request, res: Response) => {
   const userId: number = (req as any).user.id
@@ -28,6 +30,14 @@ export const topup = async (req: Request, res: Response) => {
       data.userId = userId
       const result = await topUpAmmount(res, data)
       if (result.rowCount !== 0) {
+        await createTrxes(res, {
+          invoice_number: await generateInvNumber(),
+          userId: userId,
+          service_id: 0,
+          transaction_type: 'TOPUP',
+          description: 'Top Up Balance',
+          total_amount: data.top_up_amount
+        })
         return BuildFormat.success(res, 'Top Up Balance berhasil', {
           balance: parseInt(result.rows[0].balance)
         })

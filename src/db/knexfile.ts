@@ -1,7 +1,7 @@
-import dotenv from 'dotenv';
-import path from 'path';
-import { Knex } from 'knex';
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+import dotenv from 'dotenv'
+import path from 'path'
+import { Knex } from 'knex'
+dotenv.config({ path: path.resolve(__dirname, '../../.env') })
 
 
 const knexConfig: Knex.Config = {
@@ -19,6 +19,6 @@ const knexConfig: Knex.Config = {
   seeds: {
     directory: path.join(__dirname, 'seeds'),
   },
-};
+}
 
 export default knexConfig
