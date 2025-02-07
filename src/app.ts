@@ -3,12 +3,14 @@ import swaggerJsdoc from 'swagger-jsdoc'
 import swaggerUi from 'swagger-ui-express'
 import { routes } from './routes/routes'
 import dotenv from 'dotenv'
+import cors from "cors"
 dotenv.config()
 import path from 'path'
 const app = express()
 
 app.use(express.json())
 const port = process.env.PORT
+app.use(cors())
 
 const swaggerDefinition = {
   openapi: '3.0.0',
@@ -53,6 +55,15 @@ const swaggerOptions = {
 }
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions)
+app.use(
+  cors({
+    origin: ["http://localhost:3200", "https://dtrt-magelang.com"],
+    methods: ["GET", "POST", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
+  })
+)
+
 app.use('/uploads', express.static(path.join(__dirname, './uploads')))
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs))
