@@ -113,7 +113,7 @@ export const updateImage = async (req: Request, res: Response) => {
 
 export const getFile = async(req: Request, res: Response) => {
   const fileName = req.params.filename;
-  const filePath = path.join(__dirname, '../../uploads', fileName)
+  const filePath = path.join(__dirname, '../../dist/uploads', fileName)
   console.log(filePath)
   res.sendFile(filePath, (err) => {
     if (err) {

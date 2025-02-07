@@ -4,7 +4,7 @@ import { BuildFormat } from '../common/response'
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, '/Users/nadwei/Docker Project/test-nutech/src/uploads')
+    cb(null, '/Users/nadwei/Docker Project/test-nutech/dist/uploads')
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`)
