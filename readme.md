@@ -3,6 +3,9 @@
 
 This project created with nodejs typescript using expressjs framework with knexjs and swagger documentation.
 
+## Design Database
+![design](https://dtrt-magelang.com/uploads/1738918620260-Xnip2025-02-07_15-56-12.jpg)
+
 ## Project setup
 
 ```bash
