@@ -30,7 +30,8 @@ const swaggerDefinition = {
   ],
   servers: [
     {
-      url: 'http://localhost:3200',
+      url: process.env.URL,
+      // url: 'http://localhost:3200',
     },
   ],
   components: {
